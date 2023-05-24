@@ -2,7 +2,7 @@ import subprocess
 import sys
 import os
 import matplotlib
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 from matplotlib.animation import FFMpegWriter
 import time
 import numpy as np
@@ -15,7 +15,7 @@ from IPython.display import display
 class Datatoplotgif:
     """Allow to load and plot the data choosed from {CD, EF}
     This creates an animation that can be saved as a .gif file"""
-    def __init__(self, data_type, results_folder, x_axis_type, sample_thickness, sound_velocity, sampling, nb_frames, x_left_lim,x_right_lim, x_peak1, x_peak2, x_max_CD):
+    def __init__(self, data_type, results_folder, x_axis_type, sample_thickness, sound_velocity, sampling, nb_frames, x_left_lim,x_right_lim, x_peak1, x_peak2, x_max_CD, ylim_min=0, ylim_max=0):
         """
         data_type: 'CD' or 'EF' 
         results_folder: path to results folder (not CD or EF but the results folder)
@@ -36,6 +36,8 @@ class Datatoplotgif:
         self.x_peak1 = x_peak1
         self.x_peak2 = x_peak2
         self.x_max_CD = x_max_CD
+        self.ylim_min = ylim_min
+        self.ylim_max = ylim_max
         self.load_data(self.data_type)
         self.sample_thick = sample_thickness #display in micrometer
         self.sound_velocity = sound_velocity
@@ -106,16 +108,22 @@ class Datatoplotgif:
         yminmin = np.min(ymin)
         ymaxmax = np.max(ymax)
         #max value + 10%, min_value-10%
-        if 1000>ymaxmax >=0:
-            if yminmin>=0 : self.ax.set_ylim(yminmin-yminmin/10, ymaxmax+ymaxmax/10)                 
-            else : self.ax.set_ylim(yminmin+yminmin/10, ymaxmax+ymaxmax/10) 
+        
+        if self.ylim_min!=0 and self.ylim_max!=0:
+            self.ax.set_ylim(self.ylim_min, self.ylim_max)
+        else:
             
-        elif ymaxmax<0: 
-            if yminmin>=0 : self.ax.set_ylim(yminmin-yminmin/10, ymaxmax-ymaxmax/10) 
-            else : self.ax.set_ylim(yminmin+yminmin/10, ymaxmax-ymaxmax/10) 
-            
-        else: 
-            self.ax.set_ylim(-2000, 2000) 
+            if 1000>ymaxmax >=0:
+                if yminmin>=0 : self.ax.set_ylim(yminmin-yminmin/10, ymaxmax+ymaxmax/10)                 
+                else : self.ax.set_ylim(yminmin+yminmin/10, ymaxmax+ymaxmax/10) 
+                
+            elif ymaxmax<0: 
+                if yminmin>=0 : self.ax.set_ylim(yminmin-yminmin/10, ymaxmax-ymaxmax/10) 
+                else : self.ax.set_ylim(yminmin+yminmin/10, ymaxmax-ymaxmax/10) 
+    
+            else: 
+                self.ax.set_ylim(-2000, 2000) 
+        
         
         #temporary just for space charges
         #self.ax.set_ylim(-200, 200) 
@@ -289,5 +297,6 @@ class Datatoplotgif:
 
 
 
-#230516K1
+"""#230516K1
 plot = Datatoplotgif(data_type = "CD", results_folder= "C:\\Users\\pierr\\Desktop\\PEA\\230516K1\\results",  x_axis_type = "position", sample_thickness = 127.8, sound_velocity = 2200, sampling = 1.25, nb_frames = 984, x_left_lim = 144, x_right_lim=257, x_peak1=164, x_peak2=237, x_max_CD = 38.817)
+"""
