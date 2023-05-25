@@ -87,29 +87,44 @@ class MainWindow(QMainWindow):
         
         
         ##Create buttons
-        self.folder_button = QPushButton("Select folder", self)
+        self.folder_path = 'Select folder'
+        self.folder_button = QPushButton(self.folder_path, self)
         self.folder_button.setGeometry(50, 50, 200, 100)
         self.folder_button.clicked.connect(self.select_folder)
         
+        
         #Buttons for y-axis
-        self.y_axis_group_button = QButtonGroup()
+        self.y_axis_group_button = QHBoxLayout()
         
         self.CD_button = QPushButton("Charge density", self)
         self.CD_button.setCheckable(True)
-        self.y_axis_group_button.addButton(self.CD_button)
+        self.y_axis_group_button.addWidget(self.CD_button)
         self.CD_button.clicked.connect(self.y_axis_buttonClicked)
         
         self.EF_button = QPushButton("Electric Field", self)
         self.EF_button.setCheckable(True)
-        self.y_axis_group_button.addButton(self.EF_button)
+        self.y_axis_group_button.addWidget(self.EF_button)
         self.EF_button.clicked.connect(self.y_axis_buttonClicked)
+  
+        
+        #Buttons for X-axis
+        self.x_axis_group_button = QHBoxLayout()
         
         self.points_button = QPushButton("Points", self)
-        self.points_button.clicked.connect(lambda: setattr(self, 'x_axis_type', 'points'))
+        self.points_button.setCheckable(True)
+        self.x_axis_group_button.addWidget(self.points_button)
+        self.points_button.clicked.connect(self.x_axis_buttonClicked)
+        
         self.time_button = QPushButton("Time", self)
-        self.time_button.clicked.connect(lambda: setattr(self, 'x_axis_type', 'time'))
+        self.time_button.setCheckable(True)
+        self.x_axis_group_button.addWidget(self.time_button)
+        self.time_button.clicked.connect(self.x_axis_buttonClicked)
+        
         self.position_button = QPushButton("Position", self)
-        self.position_button.clicked.connect(lambda: setattr(self, 'x_axis_type', 'position'))
+        self.position_button.setCheckable(True)
+        self.x_axis_group_button.addWidget(self.position_button)
+        self.position_button.clicked.connect(self.x_axis_buttonClicked)
+        
         
         # Create labels
         folder_path_label = QLabel("Results Folder (where CD, EF folders are):",self)
@@ -144,12 +159,9 @@ class MainWindow(QMainWindow):
         user_input_layout.addWidget(folder_path_label)
         user_input_layout.addWidget(self.folder_button)
         user_input_layout.addWidget(data_type_label)
-        user_input_layout.addWidget(self.CD_button)
-        user_input_layout.addWidget(self.EF_button)
+        user_input_layout.addLayout(self.y_axis_group_button)
         user_input_layout.addWidget(x_axis_type_label)
-        user_input_layout.addWidget(self.points_button)
-        user_input_layout.addWidget(self.time_button)
-        user_input_layout.addWidget(self.position_button)
+        user_input_layout.addLayout(self.x_axis_group_button)
         user_input_layout.addWidget(sample_thickness_label)
         user_input_layout.addWidget(self.sample_thickness_input)
         user_input_layout.addWidget(sound_velocity_label)
@@ -192,12 +204,33 @@ class MainWindow(QMainWindow):
             setattr(self, 'data_type', 'EF')
             self.EF_button.setChecked(True)
             self.CD_button.setChecked(False)
+    
+    def x_axis_buttonClicked(self):
+        sender = self.sender()
+
+        if sender == self.points_button:
+            setattr(self, 'x_axis_type', 'points')
+            self.points_button.setChecked(True)
+            self.time_button.setChecked(False)
+            self.position_button.setChecked(False)
+        elif sender == self.time_button:
+            setattr(self, 'x_axis_type', 'time')
+            self.points_button.setChecked(False)
+            self.time_button.setChecked(True)
+            self.position_button.setChecked(False)
+        
+        elif sender == self.position_button:
+            setattr(self, 'x_axis_type', 'position')
+            self.points_button.setChecked(False)
+            self.time_button.setChecked(False)
+            self.position_button.setChecked(True)
             
     
     def select_folder(self):
         self.folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", os.getcwd())
         if self.folder_path:
             os.chdir(self.folder_path)
+            self.folder_button.setText(self.folder_path)
             
         
     def process_inputs(self):
