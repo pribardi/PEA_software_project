@@ -2,7 +2,7 @@ import os
 import sys
 scriptpath =r"D:\pierr\Documents\GitHub\Logiciel_de_traitement_de_donnees_PEA"
 sys.path.append(os.path.abspath(scriptpath))
-from main import Datatoplotgif
+from Datatoplotgif import Datatoplotgif
 
 
 #230516K1
