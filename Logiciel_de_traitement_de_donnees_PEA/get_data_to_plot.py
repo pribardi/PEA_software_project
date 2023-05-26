@@ -1,14 +1,6 @@
-import subprocess
-import sys
+
 import os
-import matplotlib
-#matplotlib.use('TkAgg')
-from matplotlib.animation import FFMpegWriter
-import time
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import ipywidgets as widgets
 from IPython.display import display
 
 

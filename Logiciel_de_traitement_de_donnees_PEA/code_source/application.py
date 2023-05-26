@@ -1,16 +1,21 @@
 import os
 import sys
+import matplotlib
+matplotlib.use('Agg')
 scriptpath =r"D:\pierr\Documents\GitHub\Logiciel_de_traitement_de_donnees_PEA"
 sys.path.append(os.path.abspath(scriptpath))
 from get_data_to_plot import GetDataToPlot
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
+
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavToolbar
 import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import numpy as np
-from matplotlib.animation import FuncAnimation
 from PyQt5.QtWidgets import QLineEdit, QFileDialog, QButtonGroup
-from PyQt5.QtCore import Qt
+
+
 
 
 
@@ -19,7 +24,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         
         #Initialize the plot variables
-        self.data_type = "0"
+        self.data_type = "CD"
         self.folder_path= "C:\\Users\\pierr\\Desktop\\PEA\\230516K1\\results"
         self.x_axis_type = "position"
         self.sample_thickness = 127.8
@@ -31,9 +36,10 @@ class MainWindow(QMainWindow):
         self.x_peak1=164
         self.x_peak2=237
         self.x_max_CD = 38.817
+        self.save_folder = "C:\\Users\\pierr\\Desktop\\PEA\\230516K1\\results"
 
         self.setWindowTitle("PEA Animation Creator")
-        self.setGeometry(200, 200, 1400, 400)
+        self.setGeometry(200, 200, 1600, 400)
 
         #Main widget 
         main_widget = QWidget(self)
@@ -47,32 +53,44 @@ class MainWindow(QMainWindow):
         animation_widget.setLayout(animation_layout)
         self.fig = plt.figure(figsize=(8, 6))
         self.canvas = FigureCanvas(self.fig)
-        self.canvas.setMinimumSize(400,300)
-        self.canvas.setMaximumSize(1200,900)
+        self.canvas.setMinimumSize(800,600)
+        self.canvas.setMaximumSize(1100,900)
         animation_layout.addWidget(self.canvas)
+        
+        #Create the matplotlib toolbar and embeded it in the window
+        toolbar = NavToolbar(self.canvas, self)
+        animation_layout.addWidget(toolbar)
 
         # Create the play/pause button
+
+        
         self.play_pause_button = QPushButton("Play", self)
         self.play_pause_button.clicked.connect(self.on_play_pause_button_click)
+
 
         # Create the save buttons
         self.save_animation_button = QPushButton("Save Animation (GIF)", self)
         self.save_animation_button.clicked.connect(self.save_animation)
 
+
         self.save_frame_button = QPushButton("Save Frame (PNG)", self)
         self.save_frame_button.clicked.connect(self.save_frame)
+
 
         self.save_animation_mp4_button = QPushButton("Save Animation (MP4)", self)
         self.save_animation_mp4_button.clicked.connect(self.save_animation_mp4)
 
-        # Create the layout for buttons
+
+        # Create the layout for save buttons
         buttons_layout = QVBoxLayout()
         buttons_layout.addWidget(self.play_pause_button)
         buttons_layout.addWidget(self.save_animation_button)
         buttons_layout.addWidget(self.save_frame_button)
         buttons_layout.addWidget(self.save_animation_mp4_button)
-        self.bottom_widget = QWidget()
-        self.bottom_widget.setLayout(buttons_layout)
+        self.right_column_widget = QWidget()
+        self.right_column_widget.setLayout(buttons_layout)
+        self.right_column_widget.setMinimumSize(300,400)
+        self.right_column_widget.setMaximumSize(300,400)
 
 
         self.ax = self.fig.add_subplot(1, 1, 1)
@@ -84,6 +102,8 @@ class MainWindow(QMainWindow):
         user_input_widget = QWidget()
         user_input_layout = QVBoxLayout()
         user_input_widget.setLayout(user_input_layout)
+        user_input_widget.setMinimumSize(300,800)
+        user_input_widget.setMaximumSize(300,800)
         
         
         ##Create buttons
@@ -135,8 +155,8 @@ class MainWindow(QMainWindow):
         sampling_label = QLabel("Sampling (GHz):", self)
         x_left_lim_label = QLabel("X-axis Left Limit (points):", self)
         x_right_lim_label = QLabel("X-axis Right Limit (points):", self)
-        y_lim_min_label = QLabel("Y-axis Min Limit (points)", self)
-        y_lim_max_label = QLabel("Y-axis Max Limit (points)", self)
+        y_lim_min_label = QLabel("Y-axis Min Limit (points) - optional", self)
+        y_lim_max_label = QLabel("Y-axis Max Limit (points) - optional", self)
         x_peak1_label = QLabel("Left electrode (points):", self)
         x_peak2_label = QLabel("Right electrode (points):", self)
         x_max_CD_label = QLabel("Penetration Depth (µm):", self)
@@ -190,7 +210,11 @@ class MainWindow(QMainWindow):
         #Add everything to main layout
         main_layout.addWidget(user_input_widget)
         main_layout.addWidget(animation_widget)
-        main_layout.addWidget(self.bottom_widget)
+        main_layout.addWidget(self.right_column_widget)
+        
+        
+        self.first_time = 1
+        
     
     def y_axis_buttonClicked(self):
         sender = self.sender()
@@ -229,16 +253,18 @@ class MainWindow(QMainWindow):
     def select_folder(self):
         self.folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", os.getcwd())
         if self.folder_path:
+            self.save_folder = self.folder_path
             os.chdir(self.folder_path)
             self.folder_button.setText(self.folder_path)
             
         
     def process_inputs(self):
         
-        if self.CD_button or self.EF_button or self.points_button or self.time_button or self.position_button\
-            or self.folder_path or self.sample_thickness_input.text()!='' or self.sound_velocity_input.text()!=''\
-                or self.sampling_input.text()!='' or self.x_left_lim_input.text()!='' or self.x_right_lim_input.text()!=''\
-                    or self.x_peak1_input.text()!='' or self.x_peak2_input.text()!='' or self.x_max_CD_input.text()!='' or self.y_lim_min_input.text()!='' or self.y_lim_max_input.text()!='':
+        if self.CD_button and self.EF_button and self.points_button and self.time_button and self.position_button\
+            and self.folder_path and self.sample_thickness_input.text()!='' and self.sound_velocity_input.text()!=''\
+                and self.sampling_input.text()!='' and self.x_left_lim_input.text()!='' and self.x_right_lim_input.text()!=''\
+                    and self.x_peak1_input.text()!='' and self.x_peak2_input.text()!='' and self.x_max_CD_input.text()!='' \
+                        and self.y_lim_min_input.text()!='' and self.y_lim_max_input.text()!='':
             
             self.sample_thickness= float(self.sample_thickness_input.text())
             self.sound_velocity = float(self.sound_velocity_input.text())
@@ -248,16 +274,35 @@ class MainWindow(QMainWindow):
             self.x_peak1 = int(self.x_peak1_input.text())
             self.x_peak2 = int(self.x_peak2_input.text())
             self.x_max_CD = float(self.x_max_CD_input.text())
-            self.y_lim_min = float(self.y_lim_min_input.text())
-            self.y_lim_max = float(self.y_lim_max_input.text())
-            
             self.no_inputs = False
         else: 
             self.no_inputs = True
+            
+        if self.y_lim_min_input.text()!='':
+            self.y_lim_min = float(self.y_lim_min_input.text())
+        else: 
+            self.y_lim_min = 0
+            
+        if self.y_lim_max_input.text()!='':
+            self.y_lim_max = float(self.y_lim_max_input.text())
+        else: 
+            self.y_lim_max = 0
+            
+    
+        
         
         
     def create_animation(self):
         self.process_inputs()
+        
+        if self.first_time == 0:
+            self.ax.clear()           
+            self.canvas.draw_idle()
+            
+            
+        
+        
+        
         if self.no_inputs == False: 
             self.data = GetDataToPlot(data_type = self.data_type,\
                 results_folder= self.folder_path,\
@@ -276,7 +321,9 @@ class MainWindow(QMainWindow):
                        
             self.data = GetDataToPlot()
         
+        self.first_time = 0
         self.start_animation()
+        
         
         
     def init_ani(self):
@@ -354,9 +401,8 @@ class MainWindow(QMainWindow):
         self.ax.axvline(x=x1, color='red', linestyle='--', label = "Cathode")
         self.ax.axvline(x=x2, color='green', linestyle='--', label = "Anode")
         self.ax.axvline(x=x3, color = 'black', linestyle='--', label = "Penetration depth")
-        self.line, = self.ax.plot(self.data.x, self.data.y[0], color='black')
+        self.line, = self.ax.plot(self.data.x, self.data.y[0], color='blue')
         
-
         return self.line,
                  
     
@@ -408,16 +454,16 @@ class MainWindow(QMainWindow):
 
     def save_animation(self):
         writer = animation.PillowWriter(fps=15)
-        os.chdir(self.folder_path)
-        self.ani.save(f"{self.data_type}_gif.gif", writer=writer)
+        os.chdir(self.save_folder)
+        self.ani.save(self.data_type + "_gif_.gif", writer=writer)
 
     def save_frame(self):
-        os.chdir(self.folder_path)
-        self.fig.savefig(f"{self.data_type}_frame{self.frame}.png")
+        os.chdir(self.save_folder)
+        self.fig.savefig(self.data_type +f"_frame{self.frame}.png")
 
     def save_animation_mp4(self):
-        os.chdir(self.folder_path)
-        self.ani.save(f"{self.data_type}_animation.mp4", writer="ffmpeg")
+        os.chdir(self.save_folder)
+        self.ani.save(self.data_type +"_animation.mp4", writer="ffmpeg")
 
 def main():
     app = QApplication(sys.argv)
